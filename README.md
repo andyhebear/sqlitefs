@@ -18,7 +18,7 @@ This table is just a simple key-value pair structure.
 
 FsBlock (table to store metadata about the directories and files)
 Hide   Copy Code
-
+`
 CREATE TABLE FsBlock (fsID integer primary key autoincrement,
                       fsType integer,
                       fsCreateTime integer,
@@ -27,9 +27,9 @@ CREATE TABLE FsBlock (fsID integer primary key autoincrement,
                       fsName varchar(512),
                       fsParent integer,
                       fsChild blob)
-
+`
 Each row in this table describes a directory or a file:
-
+`
     fsID -- an auto increment ID to uniquely identify a directory or a file (no two directories or files will have the same ID) (ID number '1' is reserved for root directory)
     fsType -- '0' indicates a directory while '1' is a file
     fsCreateTime -- time of creation, which is stored as the format of the Windows file time (i.e., number of 100 nano seconds since 1601 Jan, 1)
@@ -38,22 +38,22 @@ Each row in this table describes a directory or a file:
     fsName -- name of file or directory (not full path)
     fsParent -- fsID of the parent directory
     fsChild -- for a directory, it is an array of fsIDs of its children (each ID is 4 bytes in size but can be changed to 8 bytes); for a file, it is a single 'dID', which is the primary key in the 'DataBlock' table
-
+`
 DataBlock (table to store the real data of all files)
 Hide   Copy Code
-
+`
 CREATE TABLE DataBlock (dID integer primary key autoincrement,
                         dFileType integer,
                         dTextData text,
                         dRawBinData blob)
-
+`
 Each row in this table contains the real data of a file:
-
+`
     dID -- an auto increment to uniquely identify the file content
     dFileType -- '0' means it is a text file and file data should be fetched from 'dTextData'; '1' means it is a binary file and file data should be fetched from 'dRawBinData'
     dTextData -- contains the text content of a file if the corresponding 'dFileType' is '0'
     dRawBinData -- contains the binary content of a file if the corresponding 'dFileType' is '1'
-
+`
 Real example
 
 Let's take a real example of the tables above:
@@ -64,7 +64,7 @@ Only some simple data is stored in FsInfo. Actually, you can store anything you 
 
 The above FsBlock shows a directory hierarchy as follows:
 Hide   Copy Code
-
+`
 / (root dir)
 |
 +-- hello/
@@ -80,26 +80,26 @@ Hide   Copy Code
 +-- yes.bin
 |
 +-- mytext.txt
-
+`
 DataBlock shows a mapping from the 'files' in FsBlock. (The IDs in the FsBlock table are stored in BLOB so they are not shown in the picture above.)
 Hide   Copy Code
-
+`
 /yes.bin -- dID 1
 /mytext.txt -- dID 2
 /hello/hellotext.txt -- dID 3
 /hello/hellobin.bin -- dID 4
-
+`
 SqlFs library
 
 Enough background and examples. I call the library which implements the above file system as 'SqlFs'. Let's have a look at the Java classes.
 
-    Download source code - 116 KB
+  
 
 Inside the zip archive sqlfs.zip, there are two projects -- SqlFs (a library project) and TestSqlFs (contains some test cases for the SqlFs library).
 
 If you look at the directory SqlFs/src/com/sss/sqlfs, the most commonly used classes are:
 Hide   Copy Code
-
+`
 SqlFs
 SqlFsNode
 SqlDir (derived from SqlFsNode)
@@ -107,37 +107,37 @@ SqlFile (derived from SqlFsNode)
 IFileData
 SimpleFileData (derived from IFileData)
 FsID
-
+`
 You can play with the above SQLite tables (create, delete, read, write, and update directories and files) with just these few classes listed. I will describe these classes in brief.
 SqlFs
 
 Everything starts from the class SqlFs. First of all, you need to create/open a database file:
 Hide   Copy Code
-
+`
 SqlFs fs = SqlFs.create("/sdcard/hello.db", appContext);
-
+`
 After obtaining an instance of SqlFs, you can read/write name-value pairs in the FsInfo table using these methods:
 Hide   Copy Code
-
+`
 String getInfo(String infoName);
 void writeInfo(String infoName, String infoVal);
-
+`
 To create directories/files under the root directory, you need to retrieve the root directory first:
 Hide   Copy Code
-
+`
 SqlDir rootDir = fs.getRootDir();
-
+`
 or if you know the absolute path (not relative) of a directory or file, try:
 Hide   Copy Code
-
+`
 SqlDir getDir(String dirPath)
 SqlFile getFile(String filePath)
-
+`
 When finished, you need to 'close' the file system:
 Hide   Copy Code
-
+`
 void close();
-
+`
 Take a look at SqlDir below to see how you can play with it.
 Path separator, current directory, and parent directory
 
@@ -150,7 +150,7 @@ SqlFsNode
 
 SqlFsNode is the super class of SqlDir and SqlFile. You will never instantiate this class directly. This class contains common methods shared by both SqlDir and SqlFile:
 Hide   Copy Code
-
+`
 Calendar getCreateTime()
 Calendar getLastModTime()
 int getFileSize()
@@ -160,13 +160,13 @@ boolean rename(String newName)
 boolean isAncestor(SqlDir dir) // check if 'dir' is one of its ancestor
 boolean move(String destPath)
 boolean move(SqlDir destDir)
-
+`
 Argument of 'move' can be an absolute or relative path.
 SqlDir
 
 Normal operations that can be performed by SqlDir:
 Hide   Copy Code
-
+`
 int getChildCount()
 boolean isAlreadyExist(String name) // check if there is any child with the same name
 SqlDir addDir(String dirName)
@@ -179,20 +179,20 @@ ArrayList<SqlFile> getFiles()
 SqlFsNode getFsNode(String path)
 SqlDir getDir(String dirPath)
 SqlFile getFile(String filePath)
-
+`
 The methods are quite intuitive. All paths must be relative here.
 SqlFile and SimpleFileData
 
 Let's take a look at what SqlFile can do:
 Hide   Copy Code
-
+`
 boolean delete()
 boolean getFileData(IFileData fileData)
 boolean saveFileData(IFileData fileData)
-
+`
 Example of getFileData:
 Hide   Copy Code
-
+`
 SqlFile file = rootDir.getFile("mytext.txt");
 SimpleFileData fdRetrieve = new SimpleFileData();
 file.getFileData(fdRetrieve);
@@ -204,10 +204,10 @@ else {
    byte[] dataRetrieve = fdRetrieve.getRawBinData();
    ...
 }
-
+`
 Example of saveFileData:
 Hide   Copy Code
-
+`
 // save binary data
 SqlFile file = rootDir.addFile("yes.bin");
 SimpleFileData fd = new SimpleFileData();
@@ -221,21 +221,21 @@ SimpleFileData fd = new SimpleFileData();
 String saveStr = "The system has recovered from a serious error."; 
 fd.setTextData(saveStr);
 file.saveFileData(fd);
-
+`
 SimpleFileData is a reference implementation of IFileData. If you don't have special needs, just go with it. In fact, you can define your own implementation of IFileData but then you need to instantiate SqlFs using another 'SqlFs.create':
 Hide   Copy Code
-
+`
 // assume MyFileData is your own implementation of IFileData
 SqlFs fs = SqlFs.create("/sdcard/myfile.db", new MyFileData(), appContext);
-
+`
 Inside the test case project, TestSqlFs, there is an example of a user-defined IFileData implementation (UrlFileData). The schema of the 'DataBlock' table is also different from the one used by SimpleFileData.
 FsID
 
 It is a class to wrap around the fsID used in FsBlock. By default, it uses a 32 bit integer but can be changed to use 64 bit by changing the internal flag inside FsID:
 Hide   Copy Code
-
+`
 private static final boolean useLongID
-
+`
 Thread safety
 
 I didn't test reading/writing the same database file with two different processes on Android but there is a test case (inside TestSqlFs -- TestMultiReadWrite.testReadWrite) to read/write the same DB with two different threads in the same process.
